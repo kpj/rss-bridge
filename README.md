@@ -6,7 +6,7 @@ A bridge between your RSS reader and an RSS source which extracts full articles.
 
 Run the `rss-bridge` server:
 ```bash
-hatch run dev
+$ hatch run dev
 ```
 
 Use the following URL scheme to add feeds to your RSS reader:

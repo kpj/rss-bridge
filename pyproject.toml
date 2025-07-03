@@ -6,7 +6,6 @@ dependencies = [
   "fastapi[standard]",
   "readability-lxml",
   "requests",
-  "IPython",
   "feedparser",
   "feedgen",
   "tqdm",
