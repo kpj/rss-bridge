@@ -1,19 +1,20 @@
-import requests
-from readability import Document
+from newspaper import Article
 
 
 def extract_article(url: str) -> tuple[str, str]:
-    response = requests.get(url)
-    doc = Document(response.text)
+    article = Article(url)
+    article.download()
+    article.parse()
 
-    return (doc.short_title(), doc.summary())
-    # return (doc.title(), doc.content())
+    return (article.title.strip(), article.text.strip())
 
 
 def main():
     url = "https://paulgraham.com/progbot.html"
 
-    extract_article(url)
+    title, text = extract_article(url)
+    print(f"| {title} |\n")
+    print(text)
 
 
 if __name__ == "__main__":
