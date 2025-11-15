@@ -61,6 +61,12 @@ class FeedBridge:
             else:
                 _, content = extract_article(article_url)
 
+                if not content:
+                    self.logger.warning(
+                        f"Extracted empty content for {article_url}, using placeholder."
+                    )
+                    content = "no content found"
+
             fe = fg.add_entry()
             fe.id(article_url)
             fe.title(article_title)

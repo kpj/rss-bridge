@@ -34,3 +34,6 @@ def dummy_feed_path(tmp_path):
 def test_simple_serve(client, dummy_feed_path):
     response = client.get(f"/bridge/?source_url={dummy_feed_path}")
     assert "Hello World" in response.text
+
+    cached_response = client.get(f"/bridge/?source_url={dummy_feed_path}")
+    assert cached_response.text == response.text
