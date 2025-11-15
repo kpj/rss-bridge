@@ -2,7 +2,7 @@ import pytest
 from feedgen.feed import FeedGenerator
 from fastapi.testclient import TestClient
 
-from ..main import app
+from rss_bridge.main import app
 
 
 @pytest.fixture

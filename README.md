@@ -6,7 +6,7 @@ A bridge between your RSS reader and an RSS source which extracts full articles.
 
 Run the `rss-bridge` server:
 ```bash
-$ hatch run dev
+$ uv run uvicorn rss_bridge.main:app --host 0.0.0.0 --port 8000
 ```
 
 Use the following URL scheme to add feeds to your RSS reader:
@@ -20,5 +20,5 @@ You can optionally append `&num=<x>` to only load the `x` most recent feed entri
 
 Run all tests with:
 ```bash
-$ hatch run pytest
+$ uv run pytest
 ```
