@@ -104,31 +104,55 @@ class DailyAggregator:
             logger.warning(f"No entries found in feed: {url}")
             return ""
 
-        entries = feed.entries
-        if num is not None:
-            entries = entries[:num]
-
         # Load cache
         cache = self._load_cache(url)
         cache_updated = False
 
-        # Group entries by day (YYYY-MM-DD)
+        # Group entries by day (YYYY-MM-DD), skipping today
         entries_by_day = defaultdict(list)
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-        for entry in entries:
+        for entry in feed.entries:
             published_parsed = entry.get("published_parsed")
             if published_parsed:
                 date_str = time.strftime("%Y-%m-%d", published_parsed)
             else:
                 date_str = today_str
 
-            # Skip current day as it is still ongoing
             if date_str == today_str:
                 logger.debug(f"Skipping entry from today: {entry.title}")
                 continue
 
             entries_by_day[date_str].append(entry)
+
+        # Apply filtering based on 'num' parameter
+        sorted_days = sorted(entries_by_day.keys(), reverse=True)
+
+        if num is not None:
+            if num > 0:
+                # Limit total number of articles across all days
+                filtered_entries_by_day = defaultdict(list)
+                count = 0
+                for date_str in sorted_days:
+                    for entry in entries_by_day[date_str]:
+                        if count < num:
+                            filtered_entries_by_day[date_str].append(entry)
+                            count += 1
+                        else:
+                            break
+                    if count >= num:
+                        break
+                entries_by_day = filtered_entries_by_day
+                sorted_days = sorted(entries_by_day.keys(), reverse=True)
+            elif num < 0:
+                # Limit number of full days
+                days_to_keep = abs(num)
+                sorted_days = sorted_days[:days_to_keep]
+                entries_by_day = {d: entries_by_day[d] for d in sorted_days}
+
+        if not sorted_days:
+            logger.warning(f"No entries remaining after filtering for: {url}")
+            return ""
 
         fg = FeedGenerator()
         fg.id(f"{url}/daily")
@@ -136,10 +160,13 @@ class DailyAggregator:
         fg.link(href=feed.feed.get("link", url), rel="alternate")
         fg.description(f"Daily summaries of {feed.feed.get('title', url)}")
 
-        # Process each day (sorted newest first)
-        for date_str in tqdm(
-            sorted(entries_by_day.keys(), reverse=True), desc="Processing days"
-        ):
+        # Debug output: Summary of articles per day
+        logger.info("Plan for aggregation:")
+        for date_str in sorted_days:
+            logger.info(f"  {date_str}: {len(entries_by_day[date_str])} articles")
+
+        # Process each day
+        for date_str in tqdm(sorted_days, desc="Processing days"):
             day_entries = entries_by_day[date_str]
             logger.info(f"Aggregating {len(day_entries)} entries for {date_str}")
 

@@ -1,9 +1,14 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 
 from .rss_handler import FeedBridge
 from .daily_aggregator import DailyAggregator
+
+# Configure logging at the entry point
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
