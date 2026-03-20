@@ -229,19 +229,12 @@ class DailyAggregator:
                 daily_summary = "<em>Daily summary could not be generated.</em>"
 
             # Build final content
-            full_description = [
-                "<h3>Daily Overview</h3>",
-                f"<p>{daily_summary}</p>",
-                "<h3>Articles</h3>",
-                "<ul>",
-                "".join(article_links_html),
-                "</ul>",
-            ]
+            full_description = daily_summary
 
             fe = fg.add_entry()
             fe.id(f"{url}/daily/{date_str}")
             fe.title(f"Heise Daily Summary: {date_str}")
-            fe.description("".join(full_description))
+            fe.description(full_description)
             fe.link(href=f"{url}/daily/{date_str}")
             # Use a timezone-aware datetime for pubDate (standard RSS 2.0 format)
             dt = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
