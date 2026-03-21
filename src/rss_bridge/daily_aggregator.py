@@ -64,26 +64,32 @@ class DailyAggregator:
         except Exception as e:
             logger.error(f"Failed to save cache to {cache_path}: {e}")
 
-    def summarize_day_with_gemini(self, date: str, articles: list[dict]) -> str:
-        if not self.client or not articles:
-            return ""
-
+    def _get_prompt(
+        self, date: str, articles: list[dict], max_excerpt_length: int = 10000
+    ) -> str:
         # Build context for Gemini
         context = [f"News from {date}:"]
-        for a in articles:
-            context.append(f"Title: {a['title']}\nContent: {a['content']}")
+        for i, a in enumerate(articles, 1):
+            # Truncate content so massive HTML bodies don't overwhelm the LLM's attention
+            content_str = str(a["content"])
+            excerpt = content_str[:max_excerpt_length] + (
+                "..." if len(content_str) > max_excerpt_length else ""
+            )
+            context.append(f"[{i}] Title: {a['title']}\nContent: {excerpt}")
 
         full_day_text = "\n\n---\n\n".join(context)
-        prompt = textwrap.dedent(f"""\
+        return textwrap.dedent(f"""\
             You are an inquisitive journalist and world-class news analyst.
-            Your goal is to provides a cohesive, insightful, and structured daily summary of the following news articles from {date}.
+            Your goal is to provides a cohesive, insightful, and structured daily summary of the following {len(articles)} news articles from {date}.
 
             Respond using ONLY the following structure:
-            1. **General Overview**: Start with a high-level, engaging summary of the day's main themes and most critical events.
-            2. **Topic Clusters**: Group similar or redundant articles into clearly defined topic clusters. For each cluster, provides a sharp, analytical summary that connects the related stories.
+            - **General Overview**: Start with a high-level, engaging summary of the day's main themes and most critical events.
+            - **Topic Clusters**: Group ALL {len(articles)} provided articles into clearly defined topic clusters. For each cluster, provide a sharp, analytical summary that connects the related stories.
 
             Critical Instructions:
-            - **Language Consistency**: ALL parts of your response, including headings, labels, and summaries, must be written in the SAME language as the input articles. For example, if the articles are in German, use German headings like "Allgemeiner Überblick" instead of "General Overview".
+            - **Account for EVERYTHING**: Ensure that every single article from [1] to [{len(articles)}] is categorized into at least one cluster. Do not omit any article. If an article doesn't fit a major theme, place it in an "Other News" cluster.
+            - **Language Consistency**: ALL parts of your response, including headings, labels, and summaries, must be written in the SAME language as the input articles. You MUST translate the structure headings as well (e.g., "Allgemeiner Überblick" instead of "General Overview", and "Themenbereiche" instead of "Topic Clusters").
+            - **No Numeric Indices in Headings**: Do NOT output numbers like "1." or "2." in your HTML <h3> headings.
             - **Grounding**: ONLY use information from the provided news articles. Do NOT hallucinate or include external knowledge not present in the input text.
             - **Accuracy**: If an article does not contain enough information to summarize, skip it.
 
@@ -95,6 +101,12 @@ class DailyAggregator:
             Input Articles:
             {full_day_text}
         """)
+
+    def summarize_day_with_gemini(self, date: str, articles: list[dict]) -> str:
+        if not self.client or not articles:
+            return ""
+
+        prompt = self._get_prompt(date, articles)
 
         try:
             response = self.client.models.generate_content(
