@@ -20,16 +20,17 @@ def client():
 @pytest.fixture
 def mock_extract_article(monkeypatch):
     """Mock content extraction (prevents outgoing HTTP requests for articles)"""
+
     def mock_extract(url):
         return ("Mocked Title", f"Mocked content for {url}")
-    monkeypatch.setattr(
-        "rss_bridge.daily_aggregator.extract_article", mock_extract
-    )
+
+    monkeypatch.setattr("rss_bridge.daily_aggregator.extract_article", mock_extract)
 
 
 @pytest.fixture
 def mock_gemini_client(monkeypatch):
     """Mock Gemini API client and track mock generation calls."""
+
     class MockGenerateContentResponse:
         text = "<h2>Cluster 1</h2><p>Mocked daily summary from Gemini</p>"
 
@@ -55,7 +56,9 @@ def mock_gemini_client(monkeypatch):
 
 
 @pytest.fixture
-def daily_client(client, tmp_path, monkeypatch, mock_extract_article, mock_gemini_client):
+def daily_client(
+    client, tmp_path, monkeypatch, mock_extract_article, mock_gemini_client
+):
     """Client configured with an isolated cached directory and mocked external requests for the DailyAggregator."""
     monkeypatch.setattr(
         "rss_bridge.daily_aggregator.DailyAggregator.cache_dir",
@@ -63,6 +66,7 @@ def daily_client(client, tmp_path, monkeypatch, mock_extract_article, mock_gemin
     )
     # Re-initialize the daily_aggregator on the app state to pick up mocked env/client
     from rss_bridge.daily_aggregator import DailyAggregator
+
     client.app.state.daily_aggregator = DailyAggregator()
     return client
 
@@ -75,15 +79,22 @@ def dummy_feed_path(tmp_path):
     fg.link(href="https://foo.daily")
     fg.description("News.")
 
-    fe = fg.add_entry()
-    fe.id("dummy_01")
-    fe.title("Hello World")
-    fe.link(href="https://foo.daily/1")
-    fe.description("Update!")
-
     # Add a date from yesterday so it gets aggregated (today's entries are skipped)
     yesterday_dt = datetime.now(timezone.utc) - timedelta(days=1)
-    fe.pubDate(yesterday_dt)
+
+    fe1 = fg.add_entry()
+    fe1.id("dummy_01")
+    fe1.title("Hello World")
+    fe1.link(href="https://foo.daily/1")
+    fe1.description("Update 1!")
+    fe1.pubDate(yesterday_dt)
+
+    fe2 = fg.add_entry()
+    fe2.id("dummy_02")
+    fe2.title("Hello Again")
+    fe2.link(href="https://foo.daily/2")
+    fe2.description("Update 2!")
+    fe2.pubDate(yesterday_dt)
 
     rss_file = tmp_path / "daily_rss.xml"
     fg.rss_file(rss_file)
@@ -100,10 +111,21 @@ def test_simple_serve(client, dummy_feed_path):
     )  # Avoid exact string match due to lastBuildDate varying by second
 
 
-def test_daily_summary(daily_client, dummy_feed_path):
+def test_daily_summary(daily_client, dummy_feed_path, mock_gemini_client):
     response = daily_client.get(f"/daily_summary/?source_url={dummy_feed_path}")
     assert response.status_code == 200
     assert "Mocked daily summary from Gemini" in response.text
+
+    # Verify that the LLM was called with a prompt containing BOTH articles
+    # to prevent bugs where only the last article is passed.
+    assert mock_gemini_client.call_count == 1
+    call_args = mock_gemini_client.call_args[1]
+    prompt = call_args["contents"]
+
+    assert "Hello World" in prompt
+    assert "Hello Again" in prompt
+    assert "Mocked content for https://foo.daily/1" in prompt
+    assert "Mocked content for https://foo.daily/2" in prompt
 
     # Run a second time to test cached summary (should not hit the mock extract_article or Gemini again)
     cached_response = daily_client.get(f"/daily_summary/?source_url={dummy_feed_path}")
