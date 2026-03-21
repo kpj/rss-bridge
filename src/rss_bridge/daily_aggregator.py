@@ -203,17 +203,17 @@ class DailyAggregator:
                         cache_updated = True
                         day_has_new_content = True
 
-                content_for_summary = (
-                    full_content if full_content else entry.get("summary", "")
-                )
+                    content_for_summary = (
+                        full_content if full_content else entry.get("summary", "")
+                    )
 
-                articles_to_summarize.append(
-                    {"title": article_title, "content": content_for_summary}
-                )
+                    articles_to_summarize.append(
+                        {"title": article_title, "content": content_for_summary}
+                    )
 
-                article_links_html.append(
-                    f"<li><a href='{article_url}'>{article_title}</a></li>"
-                )
+                    article_links_html.append(
+                        f"<li><a href='{article_url}'>{article_title}</a></li>"
+                    )
 
             logger.info(
                 f"Used cached content for {cached_count}/{len(day_entries)} entries"
