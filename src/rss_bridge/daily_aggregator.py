@@ -102,20 +102,32 @@ class DailyAggregator:
             {full_day_text}
         """)
 
-    def summarize_day_with_gemini(self, date: str, articles: list[dict]) -> str:
+    def summarize_day_with_gemini(
+        self, date: str, articles: list[dict], max_retries: int = 3
+    ) -> str:
         if not self.client or not articles:
             return ""
 
         prompt = self._get_prompt(date, articles)
 
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_id, contents=prompt
-            )
-            return response.text.strip()
-        except Exception as e:
-            logger.error(f"Gemini daily summarization failed: {e}")
-            return ""
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model_id, contents=prompt
+                )
+                return response.text.strip()
+            except Exception as e:
+                if attempt < max_retries:
+                    sleep_time = 2**attempt
+                    logger.warning(
+                        f"Gemini summarization transient error (attempt {attempt}/{max_retries}): {e!r}. Retrying in {sleep_time}s..."
+                    )
+                    time.sleep(sleep_time)
+                else:
+                    logger.error(
+                        f"Gemini daily summarization failed after {max_retries} attempts: {e!r}"
+                    )
+                    return ""
 
     def process_feed(self, url: str, num: int | None = None) -> str:
         logger.info(f"Processing daily aggregation for {url}")
