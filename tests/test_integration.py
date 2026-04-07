@@ -4,8 +4,8 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 import pytest
-from feedgen.feed import FeedGenerator
 from fastapi.testclient import TestClient
+from feedgen.feed import FeedGenerator
 
 from rss_bridge.main import app
 

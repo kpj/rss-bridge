@@ -1,10 +1,9 @@
-import time
 import logging
+import time
 from pathlib import Path
 
 import feedparser
 from feedgen.feed import FeedGenerator
-
 from tqdm import tqdm
 
 from .content_extraction import extract_article
