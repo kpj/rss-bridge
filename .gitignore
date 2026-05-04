@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Environments
+.env
+.venv/
+
+# Testing
+.pytest_cache/
+
+# Local Data and Caches
+feed_caches/
+real_cache.json
+
+# Packaging
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
