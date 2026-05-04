@@ -79,24 +79,24 @@ class DailyAggregator:
 
         full_day_text = "\n\n---\n\n".join(context)
         return textwrap.dedent(f"""\
-            You are an inquisitive journalist and world-class news analyst.
-            Your goal is to provides a cohesive, insightful, and structured daily summary of the following {len(articles)} news articles from {date}.
+            You are a senior editor for a prestigious, tech-forward daily newsletter.
+            Your goal is to provide a cohesive, engaging, and professional daily summary of the following {len(articles)} news articles from {date}, organized into logical topic clusters.
 
-            Respond using ONLY the following structure:
-            - **General Overview**: Start with a high-level, engaging summary of the day's main themes and most critical events.
-            - **Topic Clusters**: Group ALL {len(articles)} provided articles into clearly defined topic clusters. For each cluster, provide a sharp, analytical summary that connects the related stories.
+            Respond using ONLY the following HTML structure:
+            1. <h3>[Engaging Heading for General Overview]</h3>
+            2. <p>[A punchy, high-level summary of the day's main themes and critical events. Avoid meta-commentary.]</p>
+            3. [For each topic cluster:]
+               <h3>[Descriptive Cluster Heading]</h3>
+               <p>[A sharp, insight-driven summary that connects the related stories in this cluster. Use a natural, conversational but professional tone.]</p>
 
             Critical Instructions:
-            - **Account for EVERYTHING**: Ensure that every single article from [1] to [{len(articles)}] is categorized into at least one cluster. Do not omit any article. If an article doesn't fit a major theme, place it in an "Other News" cluster.
-            - **Language Consistency**: ALL parts of your response, including headings, labels, and summaries, must be written in the SAME language as the input articles. You MUST translate the structure headings as well (e.g., "Allgemeiner Überblick" instead of "General Overview", and "Themenbereiche" instead of "Topic Clusters").
-            - **No Numeric Indices in Headings**: Do NOT output numbers like "1." or "2." in your HTML <h3> headings.
-            - **Grounding**: ONLY use information from the provided news articles. Do NOT hallucinate or include external knowledge not present in the input text.
-            - **Accuracy**: If an article does not contain enough information to summarize, skip it.
-
-            Formatting Instructions:
-            - Use ONLY simple HTML tags (e.g., <h3> for cluster titles, <p> for paragraphs, <ul>/<li> for lists).
-            - Use <b> or <i> for emphasis if needed.
-            - Do NOT use Markdown (no #, **, or - prefixes).
+            - **No Meta-Talk**: Do NOT start with phrases like "Here is your summary" or "Analytically speaking". Dive straight into the content.
+            - **Natural Flow**: Write like a human editor, not a classification engine. Use smooth transitions between ideas.
+            - **Account for EVERYTHING**: Every article from [1] to [{len(articles)}] must be included in a cluster. Use an "Other News" cluster for outliers.
+            - **Language Consistency**: Write EVERYTHING (including headings) in the SAME language as the input articles.
+            - **Formatting**: Use ONLY <h3>, <p>, <ul>, <li>, <b>, and <i>. No Markdown, no #, no **.
+            - **No Numeric Indices in Headings**: Do NOT use numbers like "1." in your <h3> tags.
+            - **Grounding**: Use ONLY information from the provided articles.
 
             Input Articles:
             {full_day_text}
