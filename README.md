@@ -37,3 +37,11 @@ Run all tests with:
 ```bash
 uv run pytest
 ```
+
+### Live Integration Tests
+
+To run the live integration tests which perform real RSS extraction and Gemini API calls, use the `--run-live` flag. Note that this requires a valid `GEMINI_API_KEY` in your environment (or `.env` file). Use `-s` to see the generated newsletter output:
+
+```bash
+uv run pytest --run-live -s tests/test_live.py
+```
